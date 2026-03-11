@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>核桃的博客</title><link>https://Ncryptout.github.io</link><description>实话讲 我没有写博客的习惯，我的笔记零零散散在各个平台的评论和wp中，但现在还是决定把他们整理到一起..我会加油的！</description><copyright>核桃的博客</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://avatars.githubusercontent.com/u/261698442?v=4&amp;size=64</url><title>avatar</title><link>https://Ncryptout.github.io</link></image><lastBuildDate>Wed, 11 Mar 2026 02:40:46 +0000</lastBuildDate><managingEditor>核桃的博客</managingEditor><ttl>60</ttl><webMaster>核桃的博客</webMaster><item><title>3.10 两道有意思的rsa</title><link>https://Ncryptout.github.io/post/3.10%20-liang-dao-you-yi-si-de-rsa.html</link><description>刷密码学刷到了这样的一道题
-`
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>核桃的博客</title><link>https://Ncryptout.github.io</link><description>实话讲 我没有写博客的习惯，我的笔记零零散散在各个平台的评论和wp中，但现在还是决定把他们整理到一起..我会加油的！</description><copyright>核桃的博客</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://avatars.githubusercontent.com/u/261698442?v=4&amp;size=64</url><title>avatar</title><link>https://Ncryptout.github.io</link></image><lastBuildDate>Wed, 11 Mar 2026 02:58:13 +0000</lastBuildDate><managingEditor>核桃的博客</managingEditor><ttl>60</ttl><webMaster>核桃的博客</webMaster><item><title>3.10 两道有意思的rsa</title><link>https://Ncryptout.github.io/post/3.10%20-liang-dao-you-yi-si-de-rsa.html</link><description>刷密码学刷到了这样的一道题
+```python
 import random
 from gmpy2 import next_prime
 
@@ -47,14 +47,16 @@ print(flag_key[0])
 flag_c=(enc(flag_key[0], flag))
 
 print('Encrypted flag:')
-print(flag_c)`
+print(flag_c)
+```
 
-一个加密脚本提供了两份output作为两道题 output我放在附件 实在有点大
+提供了两份output作为两道题 output我放在附件 实在有点大
 
 题目读起来不是很困难 大概就是把flag中的每一个字符都作为m单独rsa，然后输出给我n和每一个m
 试了一下factor结果拆不出来（肯定的吧！不然这么费劲出题干什么）
 但是想了想这样先拆开再加密简直就是脱裤子放屁 反而更适合我爆破 
-`import string
+```python
+import string
 
 e = 65537
 n = 28150970547901913019901824364390497053600856369839321617996700606130553862041378369018779003752433356889118526332329074054728613209407037089320809898343953157935211086135010436283805891893636870991411236307901650696221491790470635225076251966300189483160148297407974155121570252648252906976186499329924342873
@@ -71,14 +73,14 @@ for c in cipher:
             break
     if not found:
         flag += '?'
-print(flag)`
-对着表很快就出来了nuaactf{F@k3_R5A_HahAHAHA}
-（话说nuaactf又是哪个）
+print(flag)
+```
+对着表很快就出来了**nuaactf{F@k3_R5A_HahAHAHA}**
 第二份output明显阴间很多 没有给出n，但c足足有280,000bit 大概900字符？
 而且题目描述上添油加醋地说
 本题的答案不会有直接形如 flag{i_am_flag} 这样的答案，但是你会看到类似的内容 FLAG IS I AM FLAG 只需要提交 flag{I_AM_FLAG} 即可
 言多必失啊.....思考了一会先写了这样一段脚本
-`
+```python
 def tongji(arr):
     count = {}
     for item in arr:
@@ -92,10 +94,11 @@ array=‘’‘依旧太多了写不下的output'''
     result = tongji(array)
     for value, count in result.items():
         print(f'值 {value} 出现了 {count} 次')
-`
+```
 结果其中一个c重复了156次，另一个c重复了90次左右 疑似出题人写小作文 第一个是空格 第二个是e
 分别代入进去 能求出kn和qn，求最大公因数就是n了，然后依旧爆破
-`c1=3454962493357935235804398048029156279039095550980789261896655337798360738722050425342188889752728340388460432418731237228933329641457678636310791152390769085756058697246856642532366705213972349136275749895187361949657257298558376286029052233131737322778610132480613456574001841996198028071886938400701639215
+```python
+c1=3454962493357935235804398048029156279039095550980789261896655337798360738722050425342188889752728340388460432418731237228933329641457678636310791152390769085756058697246856642532366705213972349136275749895187361949657257298558376286029052233131737322778610132480613456574001841996198028071886938400701639215
 m1=32
 e=65537
 
@@ -115,10 +118,11 @@ for c in cipher:
             flag += chr(ch)
             found = True
             break
-print(flag)`
+print(flag)
+```
 运行结果是
-don't starve is a marvelous survival game.the game opens with maxwell snidely commenting on the player's gaunt appearance and includes little further story.the game's setup is told further through its trailer: on a dark and stormy night, wilson appears to be getting nowhere in a chemistry experiment until he is startled by his radio speaking to him. it reveals that it has noticed his trouble and has secret knowledge of him. when he eagerly agrees, a flurry of equations and diagrams encircle him and fill his head. using white rats, a typewriter, and his blood among other tools and materials, wilson creates a giant machine. the radio commends his work and tells him to pull the machine's switch. he hesitates, but at the radio's insistence, he does so. the machine rattles violently, and a pair of ghostly arms whisk him into a different world while an apparition of maxwell cackles.the flag is this is also fake rsa
-饥荒，确实好玩 但下次别这么出题了
+don't starve is a marvelous survival game.the game opens with maxwell snidely commenting on the player's gaunt appearance and includes little further story.the game's setup is told further through its trailer: on a dark and stormy night, wilson appears to be getting nowhere in a chemistry experiment until he is startled by his radio speaking to him. it reveals that it has noticed his trouble and has secret knowledge of him. when he eagerly agrees, a flurry of equations and diagrams encircle him and fill his head. using white rats, a typewriter, and his blood among other tools and materials, wilson creates a giant machine. the radio commends his work and tells him to pull the machine's switch. he hesitates, but at the radio's insistence, he does so. the machine rattles violently, and a pair of ghostly arms whisk him into a different world while an apparition of maxwell cackles.** the flag is this is also fake rsa**
+饥荒确实好玩 但下次别这么出题了
 
 第一次在ctf中用统计频率写出题，好神奇（挠头）我会继续做下去的！
 
