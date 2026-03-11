@@ -1,5 +1,26 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>核桃的博客</title><link>https://Ncryptout.github.io</link><description>实话讲 我没有写博客的习惯，我的笔记零零散散在各个平台的评论和wp中，但现在还是决定把他们整理到一起..我会加油的！</description><copyright>核桃的博客</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://avatars.githubusercontent.com/u/261698442?v=4&amp;size=64</url><title>avatar</title><link>https://Ncryptout.github.io</link></image><lastBuildDate>Wed, 11 Mar 2026 07:31:35 +0000</lastBuildDate><managingEditor>核桃的博客</managingEditor><ttl>60</ttl><webMaster>核桃的博客</webMaster><item><title>3.9 babyrsa 但是baby在哪？</title><link>https://Ncryptout.github.io/post/3.9%20babyrsa%20-dan-shi-baby-zai-na-%EF%BC%9F.html</link><description>**刷到21年长城杯一道很难的题**
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>核桃的博客</title><link>https://Ncryptout.github.io</link><description>实话讲 我没有写博客的习惯，我的笔记零零散散在各个平台的评论和wp中，但现在还是决定把他们整理到一起..我会加油的！</description><copyright>核桃的博客</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://avatars.githubusercontent.com/u/261698442?v=4&amp;size=64</url><title>avatar</title><link>https://Ncryptout.github.io</link></image><lastBuildDate>Wed, 11 Mar 2026 08:42:21 +0000</lastBuildDate><managingEditor>核桃的博客</managingEditor><ttl>60</ttl><webMaster>核桃的博客</webMaster><item><title>整理了一些之前准备的rsa</title><link>https://Ncryptout.github.io/post/zheng-li-le-yi-xie-zhi-qian-zhun-bei-de-rsa.html</link><description>**这些都是很基础的东西，提前写出来或许能省点时间**
+放在博客上方便我拿，当然如果能帮到别人那就太好了； ）
+
+[低指数（小e广播.py](https://github.com/user-attachments/files/25895147/e.py)
+
+[费马分解.py](https://github.com/user-attachments/files/25895626/default.py)
+
+[共模.py](https://github.com/user-attachments/files/25895161/default.py)
+
+[扩展欧几里得.py](https://github.com/user-attachments/files/25895163/default.py)
+
+[高位截瘫攻击.txt](https://github.com/user-attachments/files/25895629/default.txt)  #这个记得把文件格式改成sage
+
+[维纳（小d）.py](https://github.com/user-attachments/files/25895164/d.py)
+
+[dp泄露解.py](https://github.com/user-attachments/files/25895166/dp.py)
+
+[dpdq.py](https://github.com/user-attachments/files/25895170/dpdq.py)
+
+[CRT.py](https://github.com/user-attachments/files/25895178/CRT.py)
+
+[小e解题.py](https://github.com/user-attachments/files/25895634/e.py)。</description><guid isPermaLink="true">https://Ncryptout.github.io/post/zheng-li-le-yi-xie-zhi-qian-zhun-bei-de-rsa.html</guid><pubDate>Wed, 11 Mar 2026 08:39:33 +0000</pubDate></item><item><title>3.9 babyrsa 但是baby在哪？</title><link>https://Ncryptout.github.io/post/3.9%20babyrsa%20-dan-shi-baby-zai-na-%EF%BC%9F.html</link><description>**刷到21年长城杯一道很难的题**
 ```python
 #!/usr/bin/env python3
 
