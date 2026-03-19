@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://Ncryptout.github.io/post/ruan-jian-xi-tong-an-quan-sai-crypto-fu-pan.html">
 <meta property="og:image" content="https://avatars.githubusercontent.com/u/261698442?v=4&size=64">
 <title>软件系统安全赛crypto复盘</title>
-<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
 
 
 </head>
@@ -85,177 +85,181 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <div id="content">
 <div class="markdown-body" id="postBody"><p>十四号打的比赛 赛前没睡好觉，十五号又在考试，感觉自己要猝死了赶紧睡了一天，题目原文件在附录，现在来复盘这道题。<br>
 拿到压缩包有一个level1的文件夹和一个被加密的level2，level1里有10组c和20组pk，不管这那的先写个脚本提取一下en。</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-v">Crypto</span>.<span class="pl-v">PublicKey</span> <span class="pl-k">import</span> <span class="pl-c1">RSA</span>
-<span class="pl-s1">ns</span> <span class="pl-c1">=</span> []
-<span class="pl-s1">es</span> <span class="pl-c1">=</span> []
-<span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">20</span>):
-    <span class="pl-k">with</span> <span class="pl-en">open</span>(<span class="pl-s">f'key-<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">i</span><span class="pl-kos">}</span></span>.pem'</span>, <span class="pl-s">'rb'</span>) <span class="pl-k">as</span> <span class="pl-s1">f</span>:
-        <span class="pl-s1">key</span> <span class="pl-c1">=</span> <span class="pl-c1">RSA</span>.<span class="pl-c1">import_key</span>(<span class="pl-s1">f</span>.<span class="pl-c1">read</span>())
-        <span class="pl-s1">ns</span>.<span class="pl-c1">append</span>(<span class="pl-s1">key</span>.<span class="pl-c1">n</span>)
-        <span class="pl-s1">es</span>.<span class="pl-c1">append</span>(<span class="pl-s1">key</span>.<span class="pl-c1">e</span>)
-<span class="pl-en">print</span>(<span class="pl-s">'e:'</span>, <span class="pl-s1">es</span>)
-<span class="pl-en">print</span>(<span class="pl-s">'n:'</span>, <span class="pl-s1">ns</span>)</pre></div>
+<pre lang="python" class="notranslate"><code class="notranslate">from Crypto.PublicKey import RSA
+ns = []
+es = []
+for i in range(20):
+    with open(f'key-{i}.pem', 'rb') as f:
+        key = RSA.import_key(f.read())
+        ns.append(key.n)
+        es.append(key.e)
+print('e:', es)
+print('n:', ns)
+</code></pre>
 <p>拿到参数之后再来看看出题脚本 思路很清晰了 大概就是拆开几组m，然后去CRT<br>
 其实我到这里就没在看具体rsa过程了 上面提取出来了小e和大e，直接喂给agent批量解。写wp的时候才发现encrypt里面出题人小巧思还用了aes流程，可惜被大运一般的claude创飞了。</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-v">Crypto</span>.<span class="pl-v">PublicKey</span> <span class="pl-k">import</span> <span class="pl-c1">RSA</span>
-<span class="pl-k">from</span> <span class="pl-v">Crypto</span>.<span class="pl-v">Cipher</span> <span class="pl-k">import</span> <span class="pl-c1">AES</span>
-<span class="pl-k">from</span> <span class="pl-v">Crypto</span>.<span class="pl-v">Util</span>.<span class="pl-s1">number</span> <span class="pl-k">import</span> <span class="pl-s1">bytes_to_long</span>, <span class="pl-s1">long_to_bytes</span>
-<span class="pl-k">import</span> <span class="pl-s1">gmpy2</span>, <span class="pl-s1">owiener</span>, <span class="pl-s1">math</span>
+<pre lang="python" class="notranslate"><code class="notranslate">from Crypto.PublicKey import RSA
+from Crypto.Cipher import AES
+from Crypto.Util.number import bytes_to_long, long_to_bytes
+import gmpy2, owiener, math
 
-<span class="pl-s1">keys</span> <span class="pl-c1">=</span> [<span class="pl-c1">RSA</span>.<span class="pl-c1">import_key</span>(<span class="pl-en">open</span>(<span class="pl-s">f'key-<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">i</span><span class="pl-kos">}</span></span>.pem'</span>, <span class="pl-s">'rb'</span>).<span class="pl-c1">read</span>()) <span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">20</span>)]
-<span class="pl-s1">ns</span> <span class="pl-c1">=</span> [<span class="pl-s1">k</span>.<span class="pl-c1">n</span> <span class="pl-k">for</span> <span class="pl-s1">k</span> <span class="pl-c1">in</span> <span class="pl-s1">keys</span>]
+keys = [RSA.import_key(open(f'key-{i}.pem', 'rb').read()) for i in range(20)]
+ns = [k.n for k in keys]
 
-<span class="pl-s1">fac</span> <span class="pl-c1">=</span> {}
-<span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">20</span>):
-    <span class="pl-k">for</span> <span class="pl-s1">j</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-s1">i</span> <span class="pl-c1">+</span> <span class="pl-c1">1</span>, <span class="pl-c1">20</span>):
-        <span class="pl-s1">g</span> <span class="pl-c1">=</span> <span class="pl-s1">math</span>.<span class="pl-c1">gcd</span>(<span class="pl-s1">ns</span>[<span class="pl-s1">i</span>], <span class="pl-s1">ns</span>[<span class="pl-s1">j</span>])
-        <span class="pl-k">if</span> <span class="pl-s1">g</span> <span class="pl-c1"><span class="pl-c1">not</span> <span class="pl-c1">in</span></span> (<span class="pl-c1">1</span>, <span class="pl-s1">ns</span>[<span class="pl-s1">i</span>], <span class="pl-s1">ns</span>[<span class="pl-s1">j</span>]):
-            <span class="pl-s1">fac</span>[<span class="pl-s1">ns</span>[<span class="pl-s1">i</span>]] <span class="pl-c1">=</span> (<span class="pl-s1">g</span>, <span class="pl-s1">ns</span>[<span class="pl-s1">i</span>] <span class="pl-c1">//</span> <span class="pl-s1">g</span>)
-            <span class="pl-s1">fac</span>[<span class="pl-s1">ns</span>[<span class="pl-s1">j</span>]] <span class="pl-c1">=</span> (<span class="pl-s1">g</span>, <span class="pl-s1">ns</span>[<span class="pl-s1">j</span>] <span class="pl-c1">//</span> <span class="pl-s1">g</span>)
+fac = {}
+for i in range(20):
+    for j in range(i + 1, 20):
+        g = math.gcd(ns[i], ns[j])
+        if g not in (1, ns[i], ns[j]):
+            fac[ns[i]] = (g, ns[i] // g)
+            fac[ns[j]] = (g, ns[j] // g)
 
-<span class="pl-k">def</span> <span class="pl-en">dec</span>(<span class="pl-s1">data</span>, <span class="pl-s1">key</span>):
-    <span class="pl-s1">n</span>, <span class="pl-s1">e</span> <span class="pl-c1">=</span> <span class="pl-s1">key</span>.<span class="pl-c1">n</span>, <span class="pl-s1">key</span>.<span class="pl-c1">e</span>
-    <span class="pl-s1">kl</span> <span class="pl-c1">=</span> (<span class="pl-s1">n</span>.<span class="pl-c1">bit_length</span>() <span class="pl-c1">+</span> <span class="pl-c1">7</span>) <span class="pl-c1">//</span> <span class="pl-c1">8</span>
-    <span class="pl-k">if</span> <span class="pl-en">len</span>(<span class="pl-s1">data</span>) <span class="pl-c1">&lt;</span> <span class="pl-s1">kl</span> <span class="pl-c1">+</span> <span class="pl-c1">28</span>: <span class="pl-k">return</span>
-    <span class="pl-s1">c</span> <span class="pl-c1">=</span> <span class="pl-en">bytes_to_long</span>(<span class="pl-s1">data</span>[:<span class="pl-s1">kl</span>])
-    <span class="pl-s1">nonce</span>, <span class="pl-s1">ct</span>, <span class="pl-s1">tag</span> <span class="pl-c1">=</span> <span class="pl-s1">data</span>[<span class="pl-s1">kl</span>:<span class="pl-s1">kl</span> <span class="pl-c1">+</span> <span class="pl-c1">12</span>], <span class="pl-s1">data</span>[<span class="pl-s1">kl</span> <span class="pl-c1">+</span> <span class="pl-c1">12</span>:<span class="pl-c1">-</span><span class="pl-c1">16</span>], <span class="pl-s1">data</span>[<span class="pl-c1">-</span><span class="pl-c1">16</span>:]
-    <span class="pl-s1">cs</span> <span class="pl-c1">=</span> []
-    <span class="pl-k">if</span> <span class="pl-s1">e</span> <span class="pl-c1">in</span> (<span class="pl-c1">3</span>, <span class="pl-c1">5</span>, <span class="pl-c1">17</span>, <span class="pl-c1">257</span>):
-        <span class="pl-s1">r</span>, <span class="pl-s1">ex</span> <span class="pl-c1">=</span> <span class="pl-s1">gmpy2</span>.<span class="pl-c1">iroot</span>(<span class="pl-s1">c</span>, <span class="pl-s1">e</span>)
-        <span class="pl-k">if</span> <span class="pl-s1">ex</span>:
-            <span class="pl-s1">cs</span>.<span class="pl-c1">append</span>(<span class="pl-en">int</span>(<span class="pl-s1">r</span>))
-        <span class="pl-k">else</span>:
-            <span class="pl-k">for</span> <span class="pl-s1">k</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">10000</span>):
-                <span class="pl-s1">r</span>, <span class="pl-s1">ex</span> <span class="pl-c1">=</span> <span class="pl-s1">gmpy2</span>.<span class="pl-c1">iroot</span>(<span class="pl-s1">c</span> <span class="pl-c1">+</span> <span class="pl-s1">k</span> <span class="pl-c1">*</span> <span class="pl-s1">n</span>, <span class="pl-s1">e</span>)
-                <span class="pl-k">if</span> <span class="pl-s1">ex</span>: <span class="pl-s1">cs</span>.<span class="pl-c1">append</span>(<span class="pl-en">int</span>(<span class="pl-s1">r</span>)); <span class="pl-k">break</span>
-    <span class="pl-k">if</span> <span class="pl-c1">not</span> <span class="pl-s1">cs</span> <span class="pl-c1">and</span> <span class="pl-s1">e</span>.<span class="pl-c1">bit_length</span>() <span class="pl-c1">&gt;</span> <span class="pl-c1">10</span>:
-        <span class="pl-s1">d</span> <span class="pl-c1">=</span> <span class="pl-s1">owiener</span>.<span class="pl-c1">attack</span>(<span class="pl-s1">e</span>, <span class="pl-s1">n</span>)
-        <span class="pl-k">if</span> <span class="pl-s1">d</span>: <span class="pl-s1">cs</span>.<span class="pl-c1">append</span>(<span class="pl-en">pow</span>(<span class="pl-s1">c</span>, <span class="pl-s1">d</span>, <span class="pl-s1">n</span>))
-    <span class="pl-k">if</span> <span class="pl-s1">n</span> <span class="pl-c1">in</span> <span class="pl-s1">fac</span>:
-        <span class="pl-s1">p</span>, <span class="pl-s1">q</span> <span class="pl-c1">=</span> <span class="pl-s1">fac</span>[<span class="pl-s1">n</span>]
-        <span class="pl-s1">cs</span>.<span class="pl-c1">append</span>(<span class="pl-en">pow</span>(<span class="pl-s1">c</span>, <span class="pl-en">pow</span>(<span class="pl-s1">e</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>, (<span class="pl-s1">p</span> <span class="pl-c1">-</span> <span class="pl-c1">1</span>) <span class="pl-c1">*</span> (<span class="pl-s1">q</span> <span class="pl-c1">-</span> <span class="pl-c1">1</span>)), <span class="pl-s1">n</span>))
-    <span class="pl-k">for</span> <span class="pl-s1">m</span> <span class="pl-c1">in</span> <span class="pl-en">set</span>(<span class="pl-s1">cs</span>):
-        <span class="pl-k">try</span>:
-            <span class="pl-s1">p</span> <span class="pl-c1">=</span> <span class="pl-c1">AES</span>.<span class="pl-c1">new</span>(<span class="pl-en">long_to_bytes</span>(<span class="pl-s1">m</span>, <span class="pl-c1">16</span>), <span class="pl-c1">AES</span>.<span class="pl-c1">MODE_GDDGCM</span>, <span class="pl-s1">nonce</span><span class="pl-c1">=</span><span class="pl-s1">nonce</span>).<span class="pl-c1">decrypt_and_verify</span>(<span class="pl-s1">ct</span>, <span class="pl-s1">tag</span>)
-            <span class="pl-k">return</span> <span class="pl-s1">p</span>
-        <span class="pl-k">except</span>:
-            <span class="pl-k">pass</span>
-<span class="pl-s1">ok</span> <span class="pl-c1">=</span> []
-<span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">1</span>, <span class="pl-c1">11</span>):
-    <span class="pl-s1">f</span> <span class="pl-c1">=</span> <span class="pl-s">f'ciphertext-<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">i</span><span class="pl-kos">}</span></span>.bin'</span>
-    <span class="pl-s1">d</span> <span class="pl-c1">=</span> <span class="pl-en">open</span>(<span class="pl-s1">f</span>, <span class="pl-s">'rb'</span>).<span class="pl-c1">read</span>()
-    <span class="pl-k">for</span> <span class="pl-s1">j</span>, <span class="pl-s1">key</span> <span class="pl-c1">in</span> <span class="pl-en">enumerate</span>(<span class="pl-s1">keys</span>):
-        <span class="pl-s1">r</span> <span class="pl-c1">=</span> <span class="pl-en">dec</span>(<span class="pl-s1">d</span>, <span class="pl-s1">key</span>)
-        <span class="pl-k">if</span> <span class="pl-s1">r</span>:
-            <span class="pl-en">open</span>(<span class="pl-s">f'dec_<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">i</span><span class="pl-kos">}</span></span>_key<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">j</span><span class="pl-kos">}</span></span>.txt'</span>, <span class="pl-s">'wb'</span>).<span class="pl-c1">write</span>(<span class="pl-s1">r</span>)
-            <span class="pl-s1">ok</span>.<span class="pl-c1">append</span>(<span class="pl-s1">r</span>)
-            <span class="pl-k">break</span>
+def dec(data, key):
+    n, e = key.n, key.e
+    kl = (n.bit_length() + 7) // 8
+    if len(data) &lt; kl + 28: return
+    c = bytes_to_long(data[:kl])
+    nonce, ct, tag = data[kl:kl + 12], data[kl + 12:-16], data[-16:]
+    cs = []
+    if e in (3, 5, 17, 257):
+        r, ex = gmpy2.iroot(c, e)
+        if ex:
+            cs.append(int(r))
+        else:
+            for k in range(10000):
+                r, ex = gmpy2.iroot(c + k * n, e)
+                if ex: cs.append(int(r)); break
+    if not cs and e.bit_length() &gt; 10:
+        d = owiener.attack(e, n)
+        if d: cs.append(pow(c, d, n))
+    if n in fac:
+        p, q = fac[n]
+        cs.append(pow(c, pow(e, -1, (p - 1) * (q - 1)), n))
+    for m in set(cs):
+        try:
+            p = AES.new(long_to_bytes(m, 16), AES.MODE_GDDGCM, nonce=nonce).decrypt_and_verify(ct, tag)
+            return p
+        except:
+            pass
+ok = []
+for i in range(1, 11):
+    f = f'ciphertext-{i}.bin'
+    d = open(f, 'rb').read()
+    for j, key in enumerate(keys):
+        r = dec(d, key)
+        if r:
+            open(f'dec_{i}_key{j}.txt', 'wb').write(r)
+            ok.append(r)
+            break
 
-<span class="pl-en">print</span>(<span class="pl-s">f'<span class="pl-cce">\n</span>共<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-en">len</span>(<span class="pl-s1">ok</span>)<span class="pl-kos">}</span></span>份明文'</span>)</pre></div>
+print(f'\n共{len(ok)}份明文')
+</code></pre>
 <p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/9050d1a8-3e37-4617-a65e-f6b7a13b1908"><img width="416" height="70" alt="Image" src="https://github.com/user-attachments/assets/9050d1a8-3e37-4617-a65e-f6b7a13b1908" style="max-width: 100%; height: auto; max-height: 70px;"></a></p>
 <p>然后用这些构造CRT</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">math</span> <span class="pl-k">import</span> <span class="pl-s1">gcd</span>
-<span class="pl-k">from</span> <span class="pl-v">Crypto</span>.<span class="pl-v">Util</span>.<span class="pl-s1">number</span> <span class="pl-k">import</span> <span class="pl-s1">long_to_bytes</span>, <span class="pl-s1">inverse</span>
+<pre lang="python" class="notranslate"><code class="notranslate">from math import gcd
+from Crypto.Util.number import long_to_bytes, inverse
 
-<span class="pl-s1">data</span> <span class="pl-c1">=</span> [ <span class="pl-c">#太长了，自己跑一遍m吧]</span>
+data = [ #太长了，自己跑一遍m吧]
 
-<span class="pl-s1">def</span> <span class="pl-en">crt</span>(<span class="pl-s1">a1</span>, <span class="pl-s1">m1</span>, <span class="pl-s1">a2</span>, <span class="pl-s1">m2</span>):
-    <span class="pl-s1">g</span> <span class="pl-c1">=</span> <span class="pl-en">gcd</span>(<span class="pl-s1">m1</span>, <span class="pl-s1">m2</span>)
-    <span class="pl-s1">lcm</span> <span class="pl-c1">=</span> <span class="pl-s1">m1</span> <span class="pl-c1">//</span> <span class="pl-s1">g</span> <span class="pl-c1">*</span> <span class="pl-en">m2</span>
-    <span class="pl-s1">t</span> <span class="pl-c1">=</span> ((<span class="pl-s1">a2</span> <span class="pl-c1">-</span> <span class="pl-s1">a1</span>) <span class="pl-c1">//</span> <span class="pl-s1">g</span>) <span class="pl-c1">*</span> <span class="pl-en">inverse</span>(<span class="pl-s1">m1</span> <span class="pl-c1">//</span> <span class="pl-s1">g</span>, <span class="pl-s1">m2</span> <span class="pl-c1">//</span> <span class="pl-s1">g</span>) <span class="pl-c1">%</span> (<span class="pl-s1">m2</span> <span class="pl-c1">//</span> <span class="pl-s1">g</span>)
-    <span class="pl-s1">return</span> (<span class="pl-s1">a1</span> <span class="pl-c1">+</span> <span class="pl-s1">m1</span> <span class="pl-c1">*</span> <span class="pl-s1">t</span>) <span class="pl-c1">%</span> <span class="pl-s1">lcm</span>, <span class="pl-s1">lcm</span>
+def crt(a1, m1, a2, m2):
+    g = gcd(m1, m2)
+    lcm = m1 // g * m2
+    t = ((a2 - a1) // g) * inverse(m1 // g, m2 // g) % (m2 // g)
+    return (a1 + m1 * t) % lcm, lcm
 
-<span class="pl-s1">rows</span> <span class="pl-c1">=</span> []
-<span class="pl-k">for</span> <span class="pl-s1">d</span> <span class="pl-c1">in</span> <span class="pl-s1">data</span>:
-    <span class="pl-s1">rows</span>.<span class="pl-c1">append</span>([<span class="pl-s1">x</span>.<span class="pl-c1">strip</span>() <span class="pl-k">for</span> <span class="pl-s1">x</span> <span class="pl-c1">in</span> <span class="pl-s1">d</span>.<span class="pl-c1">strip</span>().<span class="pl-c1">splitlines</span>()[<span class="pl-c1">1</span>:]])
+rows = []
+for d in data:
+    rows.append([x.strip() for x in d.strip().splitlines()[1:]])
 
-<span class="pl-s1">res</span> <span class="pl-c1">=</span> <span class="pl-s">''</span>
-<span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-en">len</span>(<span class="pl-s1">rows</span>[<span class="pl-c1">0</span>])):
-    <span class="pl-s1">cong</span> <span class="pl-c1">=</span> []
-    <span class="pl-k">for</span> <span class="pl-s1">r</span> <span class="pl-c1">in</span> <span class="pl-s1">rows</span>:
-        <span class="pl-s1">mod</span>, <span class="pl-s1">rem</span>, <span class="pl-s1">bits</span> <span class="pl-c1">=</span> <span class="pl-s1">r</span>[<span class="pl-s1">i</span>].<span class="pl-c1">split</span>(<span class="pl-s">':'</span>)
-        <span class="pl-s1">cong</span>.<span class="pl-c1">append</span>((<span class="pl-en">int</span>(<span class="pl-s1">rem</span>, <span class="pl-c1">16</span>), <span class="pl-en">int</span>(<span class="pl-s1">mod</span>, <span class="pl-c1">16</span>)))
-        <span class="pl-s1">bs</span> <span class="pl-c1">=</span> <span class="pl-en">int</span>(<span class="pl-s1">bits</span>, <span class="pl-c1">16</span>)
+res = ''
+for i in range(len(rows[0])):
+    cong = []
+    for r in rows:
+        mod, rem, bits = r[i].split(':')
+        cong.append((int(rem, 16), int(mod, 16)))
+        bs = int(bits, 16)
 
-    <span class="pl-s1">x</span>, <span class="pl-s1">_</span> <span class="pl-c1">=</span> <span class="pl-s1">cong</span>[<span class="pl-c1">0</span>]
-    <span class="pl-k">for</span> <span class="pl-s1">a</span>, <span class="pl-s1">m</span> <span class="pl-c1">in</span> <span class="pl-s1">cong</span>[<span class="pl-c1">1</span>:]:
-        <span class="pl-s1">x</span>, <span class="pl-s1">_</span> <span class="pl-c1">=</span> <span class="pl-en">crt</span>(<span class="pl-s1">x</span>, <span class="pl-s1">_</span>, <span class="pl-s1">a</span>, <span class="pl-s1">m</span>)
+    x, _ = cong[0]
+    for a, m in cong[1:]:
+        x, _ = crt(x, _, a, m)
 
-    <span class="pl-s1">res</span> <span class="pl-c1">+=</span> <span class="pl-en">long_to_bytes</span>(<span class="pl-s1">x</span>).<span class="pl-c1">rjust</span>(<span class="pl-s1">bs</span> <span class="pl-c1">//</span> <span class="pl-c1">8</span>, <span class="pl-s">b'<span class="pl-cce">\x00</span>'</span>).<span class="pl-c1">decode</span>()
+    res += long_to_bytes(x).rjust(bs // 8, b'\x00').decode()
 
-<span class="pl-s1">pwd</span> <span class="pl-c1">=</span> <span class="pl-s1">res</span>.<span class="pl-c1">split</span>(<span class="pl-s">'next pass is '</span>)[<span class="pl-c1">1</span>].<span class="pl-c1">split</span>(<span class="pl-s">'<span class="pl-cce">\n</span>'</span>)[<span class="pl-c1">0</span>]
-<span class="pl-en">print</span>(<span class="pl-s1">pwd</span>)</pre></div>
+pwd = res.split('next pass is ')[1].split('\n')[0]
+print(pwd)
+</code></pre>
 <p>9Zr4M1ThwVCHe4nHnmOcilJ8<br>
 拿这玩意打开level2 里面一个rsa出题一个加密的level3.<br>
 题目里写的很清楚d = getPrime(180)<br>
 这个d太短了，考虑连分数攻击<br>
 ed ≡ 1 (mod φ(n)) 可知存在整数 k 使得 ed - kφ(n) = 1，变形可得 e/φ(n) ≈ k/d。<br>
 因为 φ(n) ≈ n，所以 e/n 的连分数展开中会出现 k/d 的近似。</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">hashlib</span> <span class="pl-k">import</span> <span class="pl-s1">sha256</span>
-<span class="pl-k">from</span> <span class="pl-s1">math</span> <span class="pl-k">import</span> <span class="pl-s1">gcd</span>
-<span class="pl-k">from</span> <span class="pl-v">Crypto</span>.<span class="pl-v">Util</span>.<span class="pl-s1">number</span> <span class="pl-k">import</span> <span class="pl-s1">bytes_to_long</span>, <span class="pl-s1">inverse</span>
+<pre lang="python" class="notranslate"><code class="notranslate">from hashlib import sha256
+from math import gcd
+from Crypto.Util.number import bytes_to_long, inverse
 
-<span class="pl-s1">n</span> <span class="pl-c1">=</span> <span class="pl-c1">99573363048275234764231402769464116416087010014992319221201093905687439933632430466067992037046120712199565250482197004301343341960655357944577330885470918466007730570718648025143561656395751518428630742587023267450633824636936953524868735263666089452348466018195099471535823969365007120680546592999022195781</span>
-<span class="pl-s1">e</span> <span class="pl-c1">=</span> <span class="pl-c1">12076830539295193533033212232487568888200963123024189287629493480058638222146972496110814372883829765692623107191129306190788976704250502316265439996891764101447017190377014980293589797403095249538391534986638973035285900867548420192211241163778919028921502305790979880346050428839102874086046622833211913299</span>
-<span class="pl-s1">c1</span> <span class="pl-c1">=</span> <span class="pl-c1">88537483899519116785221065592618063396859368769048931371104532271282451393564912999388648867349770059882231896252136530442609316120059139869000411598215669228402275014417736389191093818032356471508269901358077592526362193180661405990147957408129845474938259771860341576649904811782733150222504695142224907008</span>
+n = 99573363048275234764231402769464116416087010014992319221201093905687439933632430466067992037046120712199565250482197004301343341960655357944577330885470918466007730570718648025143561656395751518428630742587023267450633824636936953524868735263666089452348466018195099471535823969365007120680546592999022195781
+e = 12076830539295193533033212232487568888200963123024189287629493480058638222146972496110814372883829765692623107191129306190788976704250502316265439996891764101447017190377014980293589797403095249538391534986638973035285900867548420192211241163778919028921502305790979880346050428839102874086046622833211913299
+c1 = 88537483899519116785221065592618063396859368769048931371104532271282451393564912999388648867349770059882231896252136530442609316120059139869000411598215669228402275014417736389191093818032356471508269901358077592526362193180661405990147957408129845474938259771860341576649904811782733150222504695142224907008
 
-<span class="pl-s1">m1</span> <span class="pl-c1">=</span> <span class="pl-en">bytes_to_long</span>(<span class="pl-s">b"Secret message: "</span> <span class="pl-c1">+</span> <span class="pl-s">b"A"</span> <span class="pl-c1">*</span> <span class="pl-c1">16</span>)
-
-
-<span class="pl-k">def</span> <span class="pl-en">cf</span>(<span class="pl-s1">num</span>, <span class="pl-s1">den</span>):
-    <span class="pl-k">while</span> <span class="pl-s1">den</span>:
-        <span class="pl-k">yield</span> <span class="pl-s1">num</span> <span class="pl-c1">//</span> <span class="pl-s1">den</span>
-        <span class="pl-s1">num</span>, <span class="pl-s1">den</span> <span class="pl-c1">=</span> <span class="pl-s1">den</span>, <span class="pl-s1">num</span> <span class="pl-c1">-</span> (<span class="pl-s1">num</span> <span class="pl-c1">//</span> <span class="pl-s1">den</span>) <span class="pl-c1">*</span> <span class="pl-s1">den</span>
+m1 = bytes_to_long(b"Secret message: " + b"A" * 16)
 
 
-<span class="pl-k">def</span> <span class="pl-en">convs</span>(<span class="pl-s1">cf</span>):
-    <span class="pl-s1">p0</span>, <span class="pl-s1">p1</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>, <span class="pl-c1">1</span>
-    <span class="pl-s1">q0</span>, <span class="pl-s1">q1</span> <span class="pl-c1">=</span> <span class="pl-c1">1</span>, <span class="pl-c1">0</span>
-    <span class="pl-k">for</span> <span class="pl-s1">a</span> <span class="pl-c1">in</span> <span class="pl-s1">cf</span>:
-        <span class="pl-s1">p2</span> <span class="pl-c1">=</span> <span class="pl-s1">a</span> <span class="pl-c1">*</span> <span class="pl-s1">p1</span> <span class="pl-c1">+</span> <span class="pl-s1">p0</span>
-        <span class="pl-s1">q2</span> <span class="pl-c1">=</span> <span class="pl-s1">a</span> <span class="pl-c1">*</span> <span class="pl-s1">q1</span> <span class="pl-c1">+</span> <span class="pl-s1">q0</span>
-        <span class="pl-k">yield</span> <span class="pl-s1">p2</span>, <span class="pl-s1">q2</span>
-        <span class="pl-s1">p0</span>, <span class="pl-s1">p1</span> <span class="pl-c1">=</span> <span class="pl-s1">p1</span>, <span class="pl-s1">p2</span>
-        <span class="pl-s1">q0</span>, <span class="pl-s1">q1</span> <span class="pl-c1">=</span> <span class="pl-s1">q1</span>, <span class="pl-s1">q2</span>
+def cf(num, den):
+    while den:
+        yield num // den
+        num, den = den, num - (num // den) * den
 
 
-<span class="pl-c"># 连分数攻击</span>
-<span class="pl-k">for</span> <span class="pl-s1">_</span>, <span class="pl-s1">d</span> <span class="pl-c1">in</span> <span class="pl-en">convs</span>(<span class="pl-en">cf</span>(<span class="pl-s1">e</span>, <span class="pl-s1">n</span>)):
-    <span class="pl-k">for</span> <span class="pl-s1">k</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">1</span>, <span class="pl-c1">9</span>):
-        <span class="pl-k">if</span> <span class="pl-s1">d</span> <span class="pl-c1">%</span> <span class="pl-s1">k</span>:
-            <span class="pl-k">continue</span>
-        <span class="pl-s1">d2</span> <span class="pl-c1">=</span> <span class="pl-s1">d</span> <span class="pl-c1">//</span> <span class="pl-s1">k</span>
-        <span class="pl-k">if</span> <span class="pl-en">pow</span>(<span class="pl-s1">c1</span>, <span class="pl-s1">d2</span>, <span class="pl-s1">n</span>) <span class="pl-c1">==</span> <span class="pl-s1">m1</span>:
-            <span class="pl-en">print</span>(<span class="pl-s">'d ='</span>, <span class="pl-s1">d2</span>)
+def convs(cf):
+    p0, p1 = 0, 1
+    q0, q1 = 1, 0
+    for a in cf:
+        p2 = a * p1 + p0
+        q2 = a * q1 + q0
+        yield p2, q2
+        p0, p1 = p1, p2
+        q0, q1 = q1, q2
 
-            <span class="pl-c"># 分解n</span>
-            <span class="pl-s1">k2</span> <span class="pl-c1">=</span> <span class="pl-s1">e</span> <span class="pl-c1">*</span> <span class="pl-s1">d2</span> <span class="pl-c1">-</span> <span class="pl-c1">1</span>
-            <span class="pl-s1">s</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
-            <span class="pl-k">while</span> <span class="pl-s1">k2</span> <span class="pl-c1">%</span> <span class="pl-c1">2</span> <span class="pl-c1">==</span> <span class="pl-c1">0</span>:
-                <span class="pl-s1">k2</span> <span class="pl-c1">//=</span> <span class="pl-c1">2</span>
-                <span class="pl-s1">s</span> <span class="pl-c1">+=</span> <span class="pl-c1">1</span>
 
-            <span class="pl-k">for</span> <span class="pl-s1">a</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">2</span>, <span class="pl-c1">200</span>):
-                <span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-en">pow</span>(<span class="pl-s1">a</span>, <span class="pl-s1">k2</span>, <span class="pl-s1">n</span>)
-                <span class="pl-k">if</span> <span class="pl-s1">x</span> <span class="pl-c1">in</span> (<span class="pl-c1">1</span>, <span class="pl-s1">n</span> <span class="pl-c1">-</span> <span class="pl-c1">1</span>):
-                    <span class="pl-k">continue</span>
-                <span class="pl-k">for</span> <span class="pl-s1">_</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-s1">s</span>):
-                    <span class="pl-s1">g</span> <span class="pl-c1">=</span> <span class="pl-en">gcd</span>(<span class="pl-s1">x</span> <span class="pl-c1">-</span> <span class="pl-c1">1</span>, <span class="pl-s1">n</span>)
-                    <span class="pl-k">if</span> <span class="pl-c1">1</span> <span class="pl-c1">&lt;</span> <span class="pl-s1">g</span> <span class="pl-c1">&lt;</span> <span class="pl-s1">n</span>:
-                        <span class="pl-s1">p</span>, <span class="pl-s1">q</span> <span class="pl-c1">=</span> <span class="pl-s1">g</span>, <span class="pl-s1">n</span> <span class="pl-c1">//</span> <span class="pl-s1">g</span>
-                        <span class="pl-en">print</span>(<span class="pl-s">'p ='</span>, <span class="pl-s1">p</span>)
-                        <span class="pl-en">print</span>(<span class="pl-s">'q ='</span>, <span class="pl-s1">q</span>)
-                        <span class="pl-s1">pwd</span> <span class="pl-c1">=</span> <span class="pl-en">sha256</span>(<span class="pl-en">str</span>(<span class="pl-s1">p</span> <span class="pl-c1">+</span> <span class="pl-s1">q</span>).<span class="pl-c1">encode</span>()).<span class="pl-c1">hexdigest</span>()
-                        <span class="pl-en">print</span>(<span class="pl-s">'pass ='</span>, <span class="pl-s1">pwd</span>)
-                        <span class="pl-k">break</span>
-                    <span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-en">pow</span>(<span class="pl-s1">x</span>, <span class="pl-c1">2</span>, <span class="pl-s1">n</span>)
-                <span class="pl-k">else</span>:
-                    <span class="pl-k">continue</span>
-                <span class="pl-k">break</span>
-            <span class="pl-k">break</span>
-    <span class="pl-k">else</span>:
-        <span class="pl-k">continue</span>
-    <span class="pl-k">break</span></pre></div>
+# 连分数攻击
+for _, d in convs(cf(e, n)):
+    for k in range(1, 9):
+        if d % k:
+            continue
+        d2 = d // k
+        if pow(c1, d2, n) == m1:
+            print('d =', d2)
+
+            # 分解n
+            k2 = e * d2 - 1
+            s = 0
+            while k2 % 2 == 0:
+                k2 //= 2
+                s += 1
+
+            for a in range(2, 200):
+                x = pow(a, k2, n)
+                if x in (1, n - 1):
+                    continue
+                for _ in range(s):
+                    g = gcd(x - 1, n)
+                    if 1 &lt; g &lt; n:
+                        p, q = g, n // g
+                        print('p =', p)
+                        print('q =', q)
+                        pwd = sha256(str(p + q).encode()).hexdigest()
+                        print('pass =', pwd)
+                        break
+                    x = pow(x, 2, n)
+                else:
+                    continue
+                break
+            break
+    else:
+        continue
+    break
+</code></pre>
 <p>这一层给出了 n  e  c 以及一个额外的 leak 值。<br>
 leak = ( (p * C1) ^ (q * C2) ^ ((p &amp; q) &lt;&lt; 64) ^ ((p | q) &lt;&lt; 48) ^ ((p ^ q) * C3) ) + ((p + q) % MOD128) ^ ((p * q) &amp; MASK64)<br>
 由于所有运算都是线性的或位运算，leak 的低位只依赖于 p 和 q 的低位。因此可以从最低位开始递推：</p>
